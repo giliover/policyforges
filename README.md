@@ -91,15 +91,6 @@ Aliases: `check` → `validate`; `secure-build` → `build`.
 - JWT issuer/audience checks, protected-response cache policy, structured audit logging, stronger session handling and security tests are roadmap items, **not implemented guarantees**.
 - Do not embed secrets in client JavaScript, protected or otherwise.
 
-## Development
-
-```bash
-npm install
-npm run build
-npm pack --workspace=@policyforges/react --dry-run
-npm pack --workspace=@policyforges/cli --dry-run
-```
-
 ## Security roadmap
 
 See [ROADMAP.md](ROADMAP.md) for the 14-principle checklist, current evidence, acceptance criteria, priorities and research measurements. For project boards, use [Trello checklist cards](docs/TRELLO-CHECKLIST.md).

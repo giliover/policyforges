@@ -91,15 +91,6 @@ Aliases: `check` → `validate`; `secure-build` → `build`.
 - Verificação de issuer/audience, política de cache, auditoria estruturada, sessões reforçadas e testes de segurança estão no roadmap, **não são garantias implementadas**.
 - Nunca inclua segredos no JavaScript do cliente.
 
-## Desenvolvimento
-
-```bash
-npm install
-npm run build
-npm pack --workspace=@policyforges/react --dry-run
-npm pack --workspace=@policyforges/cli --dry-run
-```
-
 ## Roadmap
 
 Veja [ROADMAP.pt-BR.md](ROADMAP.pt-BR.md) para os 14 princípios, critérios de aceite, prioridades e métricas. Os [cartões para Trello](docs/TRELLO-CHECKLIST.md) facilitam o planejamento.
