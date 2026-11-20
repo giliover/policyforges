@@ -17,7 +17,7 @@ export function installServerCommand(options: InstallServerOptions = {}) {
       `❌ Erro: O arquivo '${packageJsonPath}' não foi encontrado.`,
     );
     console.error(
-      `💡 Execute 'react-auth build' primeiro para gerar a estrutura do servidor.`,
+      `💡 Execute 'policyforges build' primeiro para gerar a estrutura do servidor.`,
     );
     process.exit(1);
   }

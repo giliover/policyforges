@@ -1,4 +1,4 @@
-// packages/cli/src/generator/serverGenerator.ts
+// packages/cli/src/generator/serverGeneratorerator.ts
 import { ProgramNode } from "../parser/ast.js";
 
 export class ServerGenerator {
@@ -9,16 +9,16 @@ export class ServerGenerator {
   }
 
   public generateServerCode(): string {
-    const permissionsMap: Record<string, string[]> = {};
+    const chunkRolePermissions: Record<string, string[]> = {};
 
     this.ast.routes.forEach((route) => {
       if (!route.isPublic && route.chunkName) {
-        permissionsMap[route.chunkName] = route.allowedRoles;
+        chunkRolePermissions[route.chunkName] = route.allowedRoles;
       }
     });
 
     return `// ============================================================================
-// ARQUIVO GERADO AUTOMATICAMENTE VIA @react-auth/cli - NÃO EDITAR DIRETA MENTE
+// ARQUIVO GERADO AUTOMATICAMENTE VIA @policyforges/cli - NÃO EDITAR DIRETAMENTE
 // ============================================================================
 
 const express = require('express');
@@ -28,11 +28,13 @@ const cors = require('cors');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
-const JWT_SECRET = process.env.JWT_SECRET || 'seu_segredo_super_seguro';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) throw new Error('JWT_SECRET é obrigatório.');
 
 // Tabela de permissões RBAC sincronizada com a DSL
-const CHUNK_PERMISSIONS = ${JSON.stringify(permissionsMap, null, 2)};
-const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
+const CHUNK_PERMISSIONS = ${JSON.stringify(chunkRolePermissions, null, 2)};
+const CORS_ORIGIN = process.env.CORS_ORIGIN;
+if (!CORS_ORIGIN) throw new Error('CORS_ORIGIN é obrigatório.');
 
 app.use(
   cors({
@@ -54,16 +56,18 @@ app.get('/api/secure-chunks/:chunkName.js', (req, res) => {
   }
 
   try {
-    const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, JWT_SECRET);
+    if (!/^Bearer\s+\S+$/i.test(authHeader)) return res.status(401).json({ error: 'Cabeçalho de autenticação inválido.' });
+    const token = authHeader.split(/\s+/)[1];
+    const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ["HS256"] });
 
-    const allowedRoles = CHUNK_PERMISSIONS[chunkName];
+    const allowedRoles = Object.hasOwn(CHUNK_PERMISSIONS, chunkName)
+      ? CHUNK_PERMISSIONS[chunkName] : undefined;
 
     if (!allowedRoles) {
       return res.status(404).json({ error: 'Módulo não encontrado.' });
     }
 
-    const userRoles = decoded.roles || [];
+    const userRoles = Array.isArray(decoded.roles) ? decoded.roles : [];
     const hasRole = userRoles.some((role) => allowedRoles.includes(role));
 
     if (!hasRole) {

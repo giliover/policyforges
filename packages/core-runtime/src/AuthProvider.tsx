@@ -23,26 +23,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   if (!window.React) window.React = React;
 
   const [token, setToken] = useState<string | null>(() => {
-    return localStorage.getItem("@react-auth/token");
+    return localStorage.getItem("@policyforges/token");
   });
 
   const [userRoles, setUserRoles] = useState<string[]>(() => {
-    const savedRoles = localStorage.getItem("@react-auth/roles");
+    const savedRoles = localStorage.getItem("@policyforges/roles");
     return savedRoles ? JSON.parse(savedRoles) : [];
   });
 
   const login = (newToken: string, roles: string[]) => {
     setToken(newToken);
     setUserRoles(roles);
-    localStorage.setItem("@react-auth/token", newToken);
-    localStorage.setItem("@react-auth/roles", JSON.stringify(roles));
+    localStorage.setItem("@policyforges/token", newToken);
+    localStorage.setItem("@policyforges/roles", JSON.stringify(roles));
   };
 
   const logout = () => {
     setToken(null);
     setUserRoles([]);
-    localStorage.removeItem("@react-auth/token");
-    localStorage.removeItem("@react-auth/roles");
+    localStorage.removeItem("@policyforges/token");
+    localStorage.removeItem("@policyforges/roles");
   };
 
   return (

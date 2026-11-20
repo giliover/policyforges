@@ -1,12 +1,14 @@
 {
-  "name": "@react-auth/cli",
-  "version": "1.0.0",
-  "main": "dist/index.js",
+  "name": "@policyforges/cli",
+  "version": "1.0.1",
+  "main": "./dist/index.js",
   "bin": {
-    "react-auth": "dist/index.js"
+    "policyforges": "./dist/index.js"
   },
   "scripts": {
-    "build": "tsc"
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "build": "tsc -p tsconfig.json",
+    "prepack": "npm run build"
   },
   "dependencies": {
     "commander": "^11.0.0",
@@ -14,5 +16,19 @@
   },
   "devDependencies": {
     "@types/node": "^20.0.0"
+  },
+  "description": "CLI para compilar políticas RBAC e gerar um servidor de distribuição autorizada de módulos JavaScript",
+  "license": "MIT",
+  "type": "commonjs",
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

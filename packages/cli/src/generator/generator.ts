@@ -25,7 +25,7 @@ export class CodeGenerator {
         ? this.ast.profiles.map((p) => `'${p.name}'`).join(" | ")
         : "'PUBLIC'";
 
-    return `// ARQUIVO GERADO AUTOMATICAMENTE VIA @react-auth/cli
+    return `// ARQUIVO GERADO AUTOMATICAMENTE VIA @policyforges/cli
 export type AppRole = 'PUBLIC' | ${profileUnion};
 `;
   }
@@ -37,7 +37,7 @@ export type AppRole = 'PUBLIC' | ${profileUnion};
 
     return `import React, { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { DynamicProtectedRoute, AuthProvider } from '@react-auth/core-runtime';
+import { DynamicProtectedRoute, AuthProvider } from '@policyforges/react';
 import { AppRole } from './authTypes';
 
 const LoadingFallback = () => <div className="auth-loading">Carregando...</div>;

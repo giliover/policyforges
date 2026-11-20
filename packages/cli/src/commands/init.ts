@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 
 const defaultDslTemplate = `# ============================================================================
-# Configuração de Autenticação e Perfis (DSL @react-auth)
+# Configuração de Autenticação e Perfis (DSL @policyforges)
 # ============================================================================
 
 profile ADMIN;

@@ -15,7 +15,7 @@ export function startServerCommand(options: StartServerOptions = {}) {
   if (!fs.existsSync(serverFilePath)) {
     console.error(`❌ Erro: O arquivo '${serverFilePath}' não foi encontrado.`);
     console.error(
-      `💡 Execute 'npx react-auth build' primeiro para compilar os artefatos.`,
+      `💡 Execute 'npx policyforges build' primeiro para compilar os artefatos.`,
     );
     process.exit(1);
   }

@@ -1,8 +1,8 @@
 import fs from "fs";
 import path from "path";
-import { Lexer } from "../lexer/index.js";
-import { Parser } from "../parser/index.js";
-import { SemanticAnalyzer } from "../analyzer/index.js";
+import { loadValidatedPolicy } from "./policyCompiler.js";
+
+
 import { CodeGenerator } from "../generator/index.js";
 
 export function compileCommand(inputFile: string, outputDir: string) {
@@ -18,28 +18,10 @@ export function compileCommand(inputFile: string, outputDir: string) {
 
   try {
     console.log(`🔍 Lendo DSL de autenticação: ${inputFile}...`);
-    const sourceContent = fs.readFileSync(inputPath, "utf-8");
-
-    // 1. Análise Léxica
-    const tokens = new Lexer(sourceContent).tokenize();
-
-    // 2. Análise Sintática (Parser LL(1))
-    const ast = new Parser(tokens).parse();
-
-    // 3. Análise Semântica
-    const analyzer = new SemanticAnalyzer(ast);
-    const semanticErrors = analyzer.analyze();
-
-    if (semanticErrors.length > 0) {
-      console.error("❌ Erros Semânticos Encontrados:");
-      semanticErrors.forEach((err) =>
-        console.error(`   - Linha ${err.line}: ${err.message}`),
-      );
-      process.exit(1);
-    }
+    const policyAst = loadValidatedPolicy(inputFile);
 
     // 4. Geração de Código
-    const generator = new CodeGenerator(ast);
+    const generator = new CodeGenerator(policyAst);
     const { authTypesCode, appRoutesCode } = generator.generate();
 
     // 5. Gravação no disco

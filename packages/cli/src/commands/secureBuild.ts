@@ -2,8 +2,8 @@
 import fs from "fs";
 import path from "path";
 import { build, Plugin } from "esbuild";
-import { Lexer } from "../lexer/index.js";
-import { Parser } from "../parser/index.js";
+import { loadValidatedPolicy } from "./policyCompiler.js";
+
 import { ServerGenerator } from "../generator/serverGenerator.js";
 import { ProgramNode } from "../parser/ast.js";
 
@@ -62,8 +62,7 @@ async function compileProtectedChunks(ast: ProgramNode, chunksDir: string) {
     const targetJsPath = path.join(chunksDir, `${route.chunkName}.js`);
 
     if (!fs.existsSync(sourceModulePath)) {
-      console.warn(`⚠️ Módulo não encontrado: ${sourceModulePath}`);
-      continue;
+      throw new Error(`Módulo protegido não encontrado: ${sourceModulePath}`);
     }
 
     await build({
@@ -76,7 +75,7 @@ async function compileProtectedChunks(ast: ProgramNode, chunksDir: string) {
       jsxFragment: "window.React.Fragment",
       plugins: [reactGlobalPlugin],
       target: "es2020",
-      external: ["react-dom", "react-router-dom", "@react-auth/core-runtime"],
+      external: ["react-dom", "react-router-dom", "@policyforges/react"],
     });
 
     console.log(`  ✅ Chunk gerado: ${route.chunkName}.js`);
@@ -85,16 +84,16 @@ async function compileProtectedChunks(ast: ProgramNode, chunksDir: string) {
 
 function generateServerFile(ast: ProgramNode, serverDir: string) {
   console.log(`🚀 Gerando artefatos do servidor em '${serverDir}'...`);
-  const serverGen = new ServerGenerator(ast);
+  const serverGenerator = new ServerGenerator(ast);
 
   // 1. Gera o arquivo de código index.js
-  const serverCode = serverGen.generateServerCode();
+  const serverCode = serverGenerator.generateServerCode();
   const serverFilePath = path.join(serverDir, "index.js");
   fs.writeFileSync(serverFilePath, serverCode, "utf-8");
   console.log(`  ✅ Servidor gerado em: ${serverFilePath}`);
 
   // 2. Gera o package.json de dependências
-  const packageJsonContent = serverGen.generatePackageJson();
+  const packageJsonContent = serverGenerator.generatePackageJson();
   const packageJsonPath = path.join(serverDir, "package.json");
   fs.writeFileSync(packageJsonPath, packageJsonContent, "utf-8");
   console.log(`  ✅ Manifest gerado em: ${packageJsonPath}`);
@@ -115,12 +114,10 @@ export async function secureBuildCommand(options: SecureBuildOptions = {}) {
   fs.mkdirSync(chunksDir, { recursive: true });
 
   try {
-    const dslContent = fs.readFileSync(dslPath, "utf-8");
-    const tokens = new Lexer(dslContent).tokenize();
-    const ast = new Parser(tokens).parse();
+    const policyAst = loadValidatedPolicy(dslFile);
 
-    await compileProtectedChunks(ast, chunksDir);
-    generateServerFile(ast, targetServerDir);
+    await compileProtectedChunks(policyAst, chunksDir);
+    generateServerFile(policyAst, targetServerDir);
 
     console.log(`✨ Processo concluído com sucesso!`);
   } catch (err: any) {

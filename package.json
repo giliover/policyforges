@@ -1,16 +1,21 @@
 {
-  "name": "react-auth",
+  "name": "policyforges-monorepo",
   "version": "1.0.1",
   "private": true,
-  "description": "Autenticação Segura usando React",
+  "description": "PolicyForges monorepo",
   "workspaces": [
     "packages/*",
     "examples/*"
   ],
   "scripts": {
-    "build:cli": "npm run build --workspace=@react-auth/cli",
-    "build:runtime": "npm run build --workspace=@react-auth/core-runtime",
-    "build": "npm run build:runtime && npm run build:cli"
+    "build:cli": "npm run build --workspace=@policyforges/cli",
+    "build:runtime": "npm run build --workspace=@policyforges/react",
+    "build": "npm run build:runtime && npm run build:cli",
+    "pack:cli": "npm pack --workspace=@policyforges/cli",
+    "pack:react": "npm pack --workspace=@policyforges/react",
+    "publish:cli": "npm publish --workspace=@policyforges/cli --access public",
+    "publish:react": "npm publish --workspace=@policyforges/react --access public",
+    "publish:all": "npm run publish:react && npm run publish:cli"
   },
   "devDependencies": {
     "typescript": "^5.0.0"

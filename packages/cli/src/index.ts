@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { Command } from "commander";
+import { validateCommand } from "./commands/validate.js";
 import { compileCommand } from "./commands/compile.js";
 import { initCommand } from "./commands/init.js";
 import { secureBuildCommand } from "./commands/secureBuild.js";
@@ -10,8 +11,8 @@ import { installServerCommand } from "./commands/installServer.js";
 const program = new Command();
 
 program
-  .name("react-auth")
-  .description("CLI de Autenticação Orientada a Perfis para React")
+  .name("policyforges")
+  .description("PolicyForges — compilador de políticas RBAC e entrega autorizada de módulos")
   .version("1.0.0");
 
 program
@@ -40,7 +41,8 @@ program
   });
 
 program
-  .command("secure-build")
+  .command("build")
+  .alias("secure-build")
   .description(
     "Compila os módulos protegidos e gera o servidor em server/index.js",
   )
@@ -74,4 +76,11 @@ program
       serverDir: options.out,
     });
   });
+program
+  .command("validate")
+  .alias("check")
+  .description("Valida a sintaxe e as políticas do security.auth sem gerar arquivos")
+  .option("-i, --input <path>", "Arquivo DSL", "security.auth")
+  .action((options) => validateCommand(options.input));
+
 program.parse(process.argv);
