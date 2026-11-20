@@ -1,190 +1,109 @@
-# Integrating `@react-auth` into a React Application (CRA)
+# PolicyForges
 
-This guide walks you through creating a React application from scratch using **Create React App (CRA)** and integrating the security framework locally through the `/dist` directories, without publishing it to NPM.
+**Declarative RBAC policy compiler and authorized JavaScript module delivery for React.**
 
----
+[Português](README.pt-BR.md) · [Security roadmap](ROADMAP.md) · [Checklist em português](ROADMAP.pt-BR.md) · [Trello cards](docs/TRELLO-CHECKLIST.md)
 
-## 1. Create the React Application
+> **Security boundary:** A user who is authorized to download JavaScript can inspect and copy it. Protecting chunk delivery does **not** replace authorization on business APIs. PolicyForges is not a complete identity provider.
 
-Inside the `examples/` directory, create a React application using Create React App with TypeScript and install `react-router-dom`:
+## What it does
+
+PolicyForges reads `security.auth`, validates route/profile rules, generates React route integration, bundles protected modules, and generates an Express endpoint that verifies JWTs and RBAC before returning protected chunks.
+
+```text
+security.auth → Lexer → Parser → Semantic Analyzer
+                               ├→ React route generation
+                               └→ esbuild chunks → Express RBAC delivery
+```
+
+## Packages
+
+| Package | Purpose |
+|---|---|
+| `@policyforges/cli` | DSL compiler, build pipeline and generated Express server |
+| `@policyforges/react` | React authentication context and protected module loader |
+
+The root monorepo is private; publish the two packages independently. See [PUBLISHING.md](PUBLISHING.md).
+
+## Requirements
+
+Node.js 20+; a React application; a trusted JWT issuer compatible with the generated server configuration. The generated server expects HS256 tokens with a `roles` array. Do not use a frontend-controlled roles list for backend authorization.
+
+## Install
 
 ```bash
-cd examples
-npx create-react-app app-cli --template typescript
-cd app-cli
-npm install react-router-dom
-
+npm install @policyforges/react
+npm install --save-dev @policyforges/cli
 ```
 
----
+## Quick start
 
-## 2. Import the Library Through `package.json`
+Create `security.auth`:
 
-Edit `examples/app-cli/package.json` to configure the relative dependencies and the new CLI scripts:
+```text
+profile ADMIN;
+profile USER;
 
-```json
-{
-  "name": "app-cli",
-  "version": "0.1.0",
-  "private": true,
-  "dependencies": {
-    // Other lines
-    "@react-auth/core-runtime": "file:../../packages/core-runtime", // Add this line
-  },
-  "devDependencies": {
-    // Other lines
-    "@react-auth/cli": "file:../../packages/cli" // Add this line
-  },
-  "scripts": {
-    // Other lines
-    "auth:compile": "react-auth compile", // Add this line
-    "auth:build": "react-auth build", // Add this line
-    "auth:install": "react-auth install", // Add this line
-    "auth:start": "react-auth start", // Add this line
-    "build": "npm run auth:compile && react-scripts build && npm run auth:build" // Add this line
-  }
-}
+route "/login" PUBLIC;
+route "/dashboard" PROTECTED BY [USER, ADMIN] CHUNK "user-dashboard";
+route "/admin" PROTECTED BY [ADMIN] CHUNK "admin-panel";
 ```
 
-Install local packages:
+Protected source modules are resolved from `src/modules/<RouteName>.tsx` (for example `/admin` → `src/modules/Admin.tsx`). Ensure these files exist before building. Public routes use the generator's naming conventions; inspect generated routes and adjust your app integration as needed.
+
+```bash
+npx policyforges init          # only if security.auth does not exist
+npx policyforges validate
+npx policyforges compile
+npx policyforges build
+npx policyforges install
+```
+
+Start the generated server (example development environment):
+
+```bash
+JWT_SECRET='replace-with-a-strong-random-secret' \
+CORS_ORIGIN='http://localhost:3000' \
+npx policyforges start
+```
+
+The application must obtain valid tokens from a trusted authentication service. The generated Express server validates tokens; it does not implement user registration or login.
+
+## CLI reference
+
+| Command | Description |
+|---|---|
+| `policyforges init` | Scaffold a `security.auth` file |
+| `policyforges validate` | Parse and validate policies without generating files |
+| `policyforges compile` | Generate React route integration |
+| `policyforges build` | Bundle protected modules and generate the Express server |
+| `policyforges install` | Install generated server dependencies |
+| `policyforges start` | Start the generated server |
+
+Aliases: `check` → `validate`; `secure-build` → `build`.
+
+## Current security model and limitations
+
+- The generated chunk endpoint checks JWT signatures with HS256 and matches trusted token roles against declared permissions.
+- `JWT_SECRET` and `CORS_ORIGIN` are required at server startup.
+- Authorization is enforced for **chunk delivery**, not automatically for your business APIs.
+- The current React runtime stores token and roles in `localStorage`, which increases exposure to XSS; do not treat client roles as trusted.
+- JWT issuer/audience checks, protected-response cache policy, structured audit logging, stronger session handling and security tests are roadmap items, **not implemented guarantees**.
+- Do not embed secrets in client JavaScript, protected or otherwise.
+
+## Development
 
 ```bash
 npm install
-
+npm run build
+npm pack --workspace=@policyforges/react --dry-run
+npm pack --workspace=@policyforges/cli --dry-run
 ```
 
----
+## Security roadmap
 
-## 3. Define the Security Policy (`security.auth`)
+See [ROADMAP.md](ROADMAP.md) for the 14-principle checklist, current evidence, acceptance criteria, priorities and research measurements. For project boards, use [Trello checklist cards](docs/TRELLO-CHECKLIST.md).
 
+## License
 
-At the root of the `app-cli` project, create a `security.auth` file:
-
-```bash
-npm run auth:init
-
-```
-
----
-
-## 4. Examples of Application Pages (`src/modules/`)
-
-### `src/modules/Login.tsx`
-
-```tsx
-import React from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "@react-auth/core-runtime";
-
-export default function Login() {
-  const { login } = useAuth();
-  const navigate = useNavigate();
-
-  const handleLoginAdmin = () => {
-    const token = "TOKEN_JWT";
-
-    login(token, ["ADMIN"]);
-    navigate("/admin");
-  };
-
-  return (
-    <div>
-      <h1>Login</h1>
-      <button onClick={handleLoginAdmin}>Sign in as Admin</button>
-    </div>
-  );
-}
-```
-
-### `src/modules/Dashboard.tsx`
-
-```tsx
-import React from "react";
-
-export default function Dashboard() {
-  return <h1>User Dashboard</h1>;
-}
-```
-
-### `src/modules/Admin.tsx`
-
-```tsx
-import React from "react";
-
-export default function Admin() {
-  return <h1>Protected Administration Panel</h1>;
-}
-```
-
----
-
-## 5. Generate Route Artifacts
-
-Run the compiler to generate frontend dynamic routes in `src/route-rbac/`:
-
-```bash
-npm run auth:compile
-
-```
-
----
-
-## 6. Connect the Router (`src/App.tsx`)
-
-Replace the contents of `src/App.tsx` with:
-
-```tsx
-import React from "react";
-import { AuthProvider } from "@react-auth/core-runtime";
-import { AppRoutes } from "./route-rbac/AppRoutes";
-
-export default function App() {
-  return (
-    <AuthProvider>
-      <AppRoutes />
-    </AuthProvider>
-  );
-}
-```
-
----
-
-## 7. Build and Run the RBAC Infrastructure
-
-### 1. Build Protected Chunks & Server Artifacts
-
-```bash
-npm run auth:build
-
-```
-
-Generates the `server/` directory containing:
-
-- `server/protected-chunks/*.js`: Bundled ESM modules.
-- `server/index.js`: Express server with RBAC middleware.
-- `server/package.json`: Server manifest.
-
-### 2. Install Server Dependencies
-
-```bash
-npm run auth:install
-
-```
-
-Executes `npm install` inside the generated `server/` folder.
-
-### 3. Start the RBAC Server
-
-```bash
-npm run auth:start
-
-```
-
-Runs the server on `http://localhost:4000`.
-
-### 4. Run Frontend React App
-
-```bash
-npm start
-
-```
+MIT. See [LICENSE](LICENSE).
