@@ -1,6 +1,6 @@
 {
   "name": "@policyforges/cli",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "main": "./dist/index.js",
   "bin": {
     "policyforges": "./dist/index.js"
@@ -8,7 +8,8 @@
   "scripts": {
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "build": "tsc -p tsconfig.json",
-    "prepack": "npm run build"
+    "prepack": "npm run build",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "commander": "^11.0.0",
@@ -29,6 +30,16 @@
     "node": ">=20"
   },
   "publishConfig": {
-    "access": "public"
-  }
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "types": "./dist/index.d.ts",
+  "keywords": [
+    "policyforges",
+    "rbac",
+    "security",
+    "typescript",
+    "cli",
+    "dsl"
+  ]
 }

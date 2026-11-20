@@ -13,7 +13,7 @@ const program = new Command();
 program
   .name("policyforges")
   .description("PolicyForges — compilador de políticas RBAC e entrega autorizada de módulos")
-  .version("1.0.0");
+  .version("1.0.2");
 
 program
   .command("init")

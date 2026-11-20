@@ -1,6 +1,6 @@
 {
   "name": "policyforges-monorepo",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "description": "PolicyForges monorepo",
   "workspaces": [
@@ -15,7 +15,11 @@
     "pack:react": "npm pack --workspace=@policyforges/react",
     "publish:cli": "npm publish --workspace=@policyforges/cli --access public",
     "publish:react": "npm publish --workspace=@policyforges/react --access public",
-    "publish:all": "npm run publish:react && npm run publish:cli"
+    "publish:all": "npm run publish:check && npm run publish:react && npm run publish:cli",
+    "pack:check": "npm run build && npm pack --workspace=@policyforges/react --dry-run && npm pack --workspace=@policyforges/cli --dry-run",
+    "publish:check": "npm run pack:check",
+    "check:cli": "node packages/cli/dist/index.js --help",
+    "version:check": "node scripts/check-versions.cjs"
   },
   "devDependencies": {
     "typescript": "^5.0.0"
