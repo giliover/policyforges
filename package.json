@@ -1,8 +1,8 @@
 {
-  "name": "policyforges-monorepo",
-  "version": "1.0.2",
+  "name": "policyforges",
+  "version": "1.0.3",
   "private": true,
-  "description": "PolicyForges monorepo",
+  "description": "PolicyForges",
   "workspaces": [
     "packages/*",
     "examples/*"
