@@ -17,14 +17,15 @@ program
 
 program
   .command("init")
-  .description("Cria um arquivo de modelo security.auth no diretório atual")
+  .description("Cria security.auth, rotas React e módulos de exemplo sem sobrescrever arquivos")
   .option(
     "-f, --filename <filename>",
     "Nome do arquivo de saída",
     "security.auth",
   )
+  .option("-o, --output <dir>", "Diretório de saída das rotas", "src/routes-rbac")
   .action((options) => {
-    initCommand(options.filename);
+    initCommand(options.filename, options.output);
   });
 
 program

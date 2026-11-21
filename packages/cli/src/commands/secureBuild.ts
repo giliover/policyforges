@@ -6,6 +6,7 @@ import { loadValidatedPolicy } from "./policyCompiler.js";
 
 import { ServerGenerator } from "../generator/serverGenerator.js";
 import { ProgramNode } from "../parser/ast.js";
+import { routeModuleName } from "../generator/routeModuleName.js";
 
 export interface SecureBuildOptions {
   dslFile?: string;
@@ -48,12 +49,7 @@ async function compileProtectedChunks(ast: ProgramNode, chunksDir: string) {
   for (const route of ast.routes) {
     if (route.isPublic || !route.chunkName) continue;
 
-    const moduleName =
-      route.path
-        .replace(/^\//, "")
-        .split("/")
-        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-        .join("") || "Home";
+    const moduleName = routeModuleName(route.path);
 
     const sourceModulePath = path.resolve(
       process.cwd(),

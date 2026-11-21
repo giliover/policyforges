@@ -1,4 +1,5 @@
 import { ProgramNode } from "../parser/ast.js";
+import { routeModuleName } from "../generator/routeModuleName.js";
 
 export interface SemanticError {
   message: string;
@@ -10,6 +11,7 @@ export class SemanticAnalyzer {
   private declaredProfiles: Set<string> = new Set();
   private declaredPaths: Set<string> = new Set();
   private usedChunkNames: Set<string> = new Set();
+  private moduleRoutes: Map<string, string> = new Map();
   private errors: SemanticError[] = [];
 
   constructor(ast: ProgramNode) {
@@ -21,6 +23,7 @@ export class SemanticAnalyzer {
     this.declaredProfiles.clear();
     this.declaredPaths.clear();
     this.usedChunkNames.clear();
+    this.moduleRoutes.clear();
 
     // 1. Coleta e validação de Perfis
     for (const profile of this.ast.profiles) {
@@ -36,6 +39,16 @@ export class SemanticAnalyzer {
 
     // 2. Validação das Rotas e Regras de Acesso
     for (const route of this.ast.routes) {
+      const moduleName = routeModuleName(route.path);
+      const previousPath = this.moduleRoutes.get(moduleName);
+      if (previousPath && previousPath !== route.path) {
+        this.errors.push({
+          message: `[Erro Semântico] As rotas '${previousPath}' e '${route.path}' geram o mesmo módulo '${moduleName}.tsx'. Altere um dos caminhos.`,
+          line: route.line,
+        });
+      } else {
+        this.moduleRoutes.set(moduleName, route.path);
+      }
       // Checa caminho duplicado
       if (this.declaredPaths.has(route.path)) {
         this.errors.push({

@@ -21,7 +21,9 @@ export function compileCommand(inputFile: string, outputDir: string) {
     const policyAst = loadValidatedPolicy(inputFile);
 
     // 4. Geração de Código
-    const generator = new CodeGenerator(policyAst);
+    const modulesPath = path.relative(targetDir, path.resolve(process.cwd(), "src/modules")).split(path.sep).join("/");
+    const modulesImport = modulesPath.startsWith(".") ? modulesPath : `./${modulesPath}`;
+    const generator = new CodeGenerator(policyAst, modulesImport);
     const { authTypesCode, appRoutesCode } = generator.generate();
 
     // 5. Gravação no disco
