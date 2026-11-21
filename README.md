@@ -1,44 +1,80 @@
 # PolicyForges
 
-**Declarative RBAC policy compiler and authorized JavaScript module delivery for React.**
+**React route access policies + protected JavaScript modules.**
 
-[Português](README.pt-BR.md) · [Security roadmap](ROADMAP.md) · [Checklist em português](ROADMAP.pt-BR.md) · [Trello cards](docs/TRELLO-CHECKLIST.md)
+[Português](README.pt-BR.md) · [Security roadmap](ROADMAP.md) · [Publishing](PUBLISHING.md)
 
-> **Security boundary:** A user who is authorized to download JavaScript can inspect and copy it. Protecting chunk delivery does **not** replace authorization on business APIs. PolicyForges is not a complete identity provider.
+## Quick start (existing React + TypeScript app)
 
-## What it does
-
-PolicyForges reads `security.auth`, validates route/profile rules, generates React route integration, bundles protected modules, and generates an Express endpoint that verifies JWTs and RBAC before returning protected chunks.
-
-```text
-security.auth → Lexer → Parser → Semantic Analyzer
-                               ├→ React route generation
-                               └→ esbuild chunks → Express RBAC delivery
-```
-
-## Packages
-
-| Package | Purpose |
-|---|---|
-| `@policyforges/cli` | DSL compiler, build pipeline and generated Express server |
-| `@policyforges/react` | React authentication context and protected module loader |
-
-The root monorepo is private; publish the two packages independently. See [PUBLISHING.md](PUBLISHING.md).
-
-## Requirements
-
-Node.js 20+; a React application; a trusted JWT issuer compatible with the generated server configuration. The generated server expects HS256 tokens with a `roles` array. Do not use a frontend-controlled roles list for backend authorization.
-
-## Install
+**1. Install:**
 
 ```bash
-npm install @policyforges/react
-npm install --save-dev @policyforges/cli
+npm install @policyforges/react react-router-dom
+npm install -D @policyforges/cli
 ```
 
-## Quick start
+**2. Generate the working starter:**
 
-Create `security.auth`:
+```bash
+npx policyforges init
+```
+
+`init` creates these files **without overwriting existing code**:
+
+```text
+security.auth
+src/routes-rbac/AppRoutes.tsx
+src/routes-rbac/authTypes.ts
+src/modules/Login.tsx
+src/modules/Dashboard.tsx
+src/modules/Admin.tsx
+```
+
+Edit `security.auth` to add/remove profiles and routes, and replace the example screens in `src/modules/`. The module filename comes from the URL: `/reports` → `Reports.tsx`, `/account/settings` → `AccountSettings.tsx`. Running `init` again adds missing modules; running `compile` **refreshes generated routes** after editing the DSL.
+
+**3. Use the generated router** in `src/App.tsx`:
+
+```tsx
+import { AppRoutes } from './routes-rbac/AppRoutes';
+export default function App() {
+  return <AppRoutes />;
+}
+```
+
+Do not add a second `BrowserRouter` or `AuthProvider` around `AppRoutes`.
+
+**4. Validate, build and install the secured chunk server:**
+
+```bash
+npx policyforges validate
+npx policyforges compile # required if you edited security.auth after init
+npx policyforges build
+npx policyforges install
+```
+
+**5. Start the API** (terminal 1) and your React app (terminal 2):
+
+```bash
+# Terminal 1 — use the SAME secret as the service issuing the JWTs
+JWT_SECRET='your-long-random-development-secret' CORS_ORIGIN='http://localhost:3000' npx policyforges start
+
+# Terminal 2 (Create React App)
+npm start
+```
+
+The generated `/login` page accepts a JWT from **your own authentication backend**. PolicyForges does not issue tokens or provide a user database. For local-only tests, after `policyforges install`, create an example JWT using the generated server dependency:
+
+```bash
+cd server
+JWT_SECRET='your-long-random-development-secret' node -e "console.log(require('jsonwebtoken').sign({roles:['USER']}, process.env.JWT_SECRET, {algorithm:'HS256', expiresIn:'15m'}))"
+cd ..
+```
+
+Paste that token on `/login`, then open `/dashboard`. `/admin` requires the `ADMIN` role inside the **signed** JWT.
+
+For Create React App, optionally configure `REACT_APP_SECURE_CHUNK_URL=http://localhost:4000/api/secure-chunks` in `.env` (this is the default). Set `CORS_ORIGIN` to your actual frontend origin and restart the dev server after changing `.env`.
+
+## `security.auth` example
 
 ```text
 profile ADMIN;
@@ -49,52 +85,23 @@ route "/dashboard" PROTECTED BY [USER, ADMIN] CHUNK "user-dashboard";
 route "/admin" PROTECTED BY [ADMIN] CHUNK "admin-panel";
 ```
 
-Protected source modules are resolved from `src/modules/<RouteName>.tsx` (for example `/admin` → `src/modules/Admin.tsx`). Ensure these files exist before building. Public routes use the generator's naming conventions; inspect generated routes and adjust your app integration as needed.
+## CLI commands
 
-```bash
-npx policyforges init          # only if security.auth does not exist
-npx policyforges validate
-npx policyforges compile
-npx policyforges build
-npx policyforges install
-```
-
-Start the generated server (example development environment):
-
-```bash
-JWT_SECRET='replace-with-a-strong-random-secret' \
-CORS_ORIGIN='http://localhost:3000' \
-npx policyforges start
-```
-
-The application must obtain valid tokens from a trusted authentication service. The generated Express server validates tokens; it does not implement user registration or login.
-
-## CLI reference
-
-| Command | Description |
+| Command | Purpose |
 |---|---|
-| `policyforges init` | Scaffold a `security.auth` file |
-| `policyforges validate` | Parse and validate policies without generating files |
-| `policyforges compile` | Generate React route integration |
-| `policyforges build` | Bundle protected modules and generate the Express server |
+| `policyforges init` | Generate DSL, routes, and missing example screens (preserves existing files) |
+| `policyforges validate` | Check DSL syntax and rules |
+| `policyforges compile` | Regenerate `src/routes-rbac/` based on DSL |
+| `policyforges build` | Bundle protected modules and generate `server/` |
 | `policyforges install` | Install generated server dependencies |
-| `policyforges start` | Start the generated server |
+| `policyforges start` | Start the chunk delivery server |
 
-Aliases: `check` → `validate`; `secure-build` → `build`.
+## Authentication and security
 
-## Current security model and limitations
+- `useAuth().login(token, roles)` stores the token **in a session cookie**, not `localStorage`. Logout clears it; roles are only UI state.
+- The runtime reads that cookie in JavaScript and sends the token as `Authorization: Bearer ...` to the chunk API. Cookies use `SameSite=Strict`, `Path=/`, and `Secure` on HTTPS. **These cookies are not HttpOnly:** JavaScript-managed cookies remain exposed to XSS.
+- For stronger protection, your authentication backend must set an **HttpOnly, Secure** cookie and validate it server-side; that architecture requires a different session/transport integration.
+- The generated server verifies HS256 JWT signatures and roles. It does **not** secure your business APIs, implement login, manage credentials, or make delivered JavaScript impossible to inspect.
+- Protected example modules must remain standalone; avoid bare imports in these chunks unless your bundling strategy supports them. Never include secrets in browser code.
 
-- The generated chunk endpoint checks JWT signatures with HS256 and matches trusted token roles against declared permissions.
-- `JWT_SECRET` and `CORS_ORIGIN` are required at server startup.
-- Authorization is enforced for **chunk delivery**, not automatically for your business APIs.
-- The current React runtime stores token and roles in `localStorage`, which increases exposure to XSS; do not treat client roles as trusted.
-- JWT issuer/audience checks, protected-response cache policy, structured audit logging, stronger session handling and security tests are roadmap items, **not implemented guarantees**.
-- Do not embed secrets in client JavaScript, protected or otherwise.
-
-## Security roadmap
-
-See [ROADMAP.md](ROADMAP.md) for the 14-principle checklist, current evidence, acceptance criteria, priorities and research measurements. For project boards, use [Trello checklist cards](docs/TRELLO-CHECKLIST.md).
-
-## License
-
-MIT. See [LICENSE](LICENSE).
+See the [14-principle security roadmap](ROADMAP.md) for work not yet implemented.
