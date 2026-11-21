@@ -2,7 +2,7 @@
 
 **React route access policies + protected JavaScript modules.**
 
-[Português](README.pt-BR.md) · [Security roadmap](ROADMAP.md) · [Publishing](PUBLISHING.md)
+[Português](README.pt-BR.md) · [Security roadmap](ROADMAP.md)
 
 ## Quick start (existing React + TypeScript app)
 

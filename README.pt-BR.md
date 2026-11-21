@@ -2,7 +2,7 @@
 
 **Políticas de acesso a rotas React e entrega de módulos JavaScript protegidos.**
 
-[English (principal)](README.md) · [Roadmap de segurança](ROADMAP.pt-BR.md) · [Publicação](PUBLISHING.md)
+[English (principal)](README.md) · [Roadmap de segurança](ROADMAP.pt-BR.md)
 
 ## Comece aqui (aplicação React + TypeScript existente)
 
