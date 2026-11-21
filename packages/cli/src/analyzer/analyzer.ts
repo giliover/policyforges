@@ -77,6 +77,11 @@ export class SemanticAnalyzer {
             message: `[Erro Semântico] A rota protegida '${route.path}' precisa especificar um nome de CHUNK válido.`,
             line: route.line,
           });
+        } else if (!/^[a-zA-Z0-9][a-zA-Z0-9_-]*$/.test(route.chunkName)) {
+          this.errors.push({
+            message: `[Erro Semântico] O nome de chunk '${route.chunkName}' deve conter apenas letras, números, '-' e '_', começando por letra ou número.`,
+            line: route.line,
+          });
         } else if (this.usedChunkNames.has(route.chunkName)) {
           this.errors.push({
             message: `[Erro Semântico] O nome de chunk '${route.chunkName}' está sendo reutilizado em rotas distintas.`,

@@ -105,3 +105,11 @@ route "/admin" PROTECTED BY [ADMIN] CHUNK "admin-panel";
 - Protected example modules must remain standalone; avoid bare imports in these chunks unless your bundling strategy supports them. Never include secrets in browser code.
 
 See the [14-principle security roadmap](ROADMAP.md) for work not yet implemented.
+
+## Editing generator templates
+
+The CLI includes editable `.ts`, `.tsx`, `.js`, `.mjs`, `.json`, and `.auth`
+source templates under `packages/cli/templates/`. The server is maintained in
+`packages/cli/templates/server/index.js`; RBAC permissions are generated into
+`server/chunk-permissions.json` instead of being injected into JavaScript.
+See [template maintenance](docs/GENERATORS.md).

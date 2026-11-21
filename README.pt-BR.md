@@ -105,3 +105,11 @@ route "/admin" PROTECTED BY [ADMIN] CHUNK "admin-panel";
 - Os módulos protegidos gerados são independentes: evite imports de pacotes não resolvidos pelo navegador. Nunca inclua segredos no código frontend.
 
 Veja o [roadmap de 14 princípios](ROADMAP.pt-BR.md) para os itens de segurança ainda pendentes.
+
+## Personalizando os templates dos geradores
+
+Os arquivos-fonte editáveis (`.ts`, `.tsx`, `.js`, `.mjs`, `.json`, `.auth`)
+ficam em `packages/cli/templates/`. O servidor fica em
+`packages/cli/templates/server/index.js`, enquanto as permissões são
+geradas separadamente em `server/chunk-permissions.json`.
+Veja [guia de manutenção](docs/GENERATORS.md).

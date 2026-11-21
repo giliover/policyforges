@@ -19,7 +19,8 @@
     "pack:check": "npm run build && npm pack --workspace=@policyforges/react --dry-run && npm pack --workspace=@policyforges/cli --dry-run",
     "publish:check": "npm run pack:check",
     "check:cli": "node packages/cli/dist/index.js --help",
-    "version:check": "node scripts/check-versions.cjs"
+    "version:check": "node scripts/check-versions.cjs",
+    "test:smoke": "npm run build && node --test tests/*.test.cjs"
   },
   "devDependencies": {
     "typescript": "^5.0.0"

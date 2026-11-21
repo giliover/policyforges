@@ -7,5 +7,5 @@ export function routeModuleName(routePath: string): string {
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join("");
 
-  return name || "Home";
+  return name ? (/^[a-zA-Z_$]/.test(name) ? name : `Route${name}`) : "Home";
 }

@@ -7,6 +7,7 @@ import { loadValidatedPolicy } from "./policyCompiler.js";
 import { ServerGenerator } from "../generator/serverGenerator.js";
 import { ProgramNode } from "../parser/ast.js";
 import { routeModuleName } from "../generator/routeModuleName.js";
+import { readTemplate } from "../generator/templateReader.js";
 
 export interface SecureBuildOptions {
   dslFile?: string;
@@ -21,21 +22,7 @@ const reactGlobalPlugin: Plugin = {
       namespace: "react-global",
     }));
     build.onLoad({ filter: /.*/, namespace: "react-global" }, () => ({
-      contents: `
-        const R = (typeof window !== 'undefined' && window.React) || {};
-        export default new Proxy(R, { get: (target, prop) => target[prop] });
-        export const {
-          createElement, cloneElement, isValidElement, createContext,
-          Fragment, StrictMode, Suspense, Profiler, Component, PureComponent,
-          Children, createRef, useState, useEffect, useContext, useReducer,
-          useCallback, useMemo, useRef, useImperativeHandle, useLayoutEffect,
-          useDebugValue, useDeferredValue, useTransition, useId,
-          useSyncExternalStore, useInsertionEffect, useActionState,
-          useOptimistic, use, memo, forwardRef, lazy, startTransition, act, version,
-          __SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED,
-          __SERVER_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED
-        } = R;
-      `,
+      contents: readTemplate("build", "react-global.mjs"),
       loader: "js",
     }));
   },
@@ -93,6 +80,11 @@ function generateServerFile(ast: ProgramNode, serverDir: string) {
   const packageJsonPath = path.join(serverDir, "package.json");
   fs.writeFileSync(packageJsonPath, packageJsonContent, "utf-8");
   console.log(`  ✅ Manifest gerado em: ${packageJsonPath}`);
+
+  // Server implementation is static; policy data changes on every build.
+  const permissionsPath = path.join(serverDir, "chunk-permissions.json");
+  fs.writeFileSync(permissionsPath, serverGenerator.generatePermissions(), "utf-8");
+  console.log(`  ✅ Permissões RBAC: ${permissionsPath}`);
 }
 
 export async function secureBuildCommand(options: SecureBuildOptions = {}) {

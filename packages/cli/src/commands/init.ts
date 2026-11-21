@@ -3,16 +3,9 @@ import path from "path";
 import { CodeGenerator } from "../generator/index.js";
 import { scaffoldRouteModule } from "../generator/moduleScaffold.js";
 import { routeModuleName } from "../generator/routeModuleName.js";
+import { readTemplate } from "../generator/templateReader.js";
 import { loadValidatedPolicy } from "./policyCompiler.js";
 
-const defaultDslTemplate = `# Authentication and access policies (PolicyForges)
-profile ADMIN;
-profile USER;
-
-route "/login" PUBLIC;
-route "/dashboard" PROTECTED BY [USER, ADMIN] CHUNK "user-dashboard";
-route "/admin" PROTECTED BY [ADMIN] CHUNK "admin-panel";
-`;
 
 function createIfMissing(file: string, content: string): boolean {
   fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -33,7 +26,7 @@ export function initCommand(filename: string = "security.auth", outputDir: strin
   const modulesDir = path.resolve(process.cwd(), "src/modules");
 
   try {
-    const dslCreated = createIfMissing(targetPath, defaultDslTemplate);
+    const dslCreated = createIfMissing(targetPath, readTemplate("security.auth"));
     console.log(dslCreated ? `✅ Criado: ${filename}` : `ℹ️ Mantido: ${filename} (já existe)`);
 
     // Always use the actual DSL, including when the user has customized it.

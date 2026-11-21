@@ -26,3 +26,10 @@ JWT_SECRET='development-secret-change-me' CORS_ORIGIN='http://localhost:3000' np
 ```
 
 The `/login` example expects a JWT from a trusted authentication backend. See the repository root README for a local test token and security notes.
+
+### Maintaining generated code
+
+The generator reads **real editable source templates** in `templates/` (included
+in the published npm package). Server source is `templates/server/index.js`;
+server permissions are written separately as `server/chunk-permissions.json`.
+The full source layout is in the monorepo's `docs/GENERATORS.md`.
