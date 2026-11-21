@@ -33,3 +33,7 @@ The generator reads **real editable source templates** in `templates/` (included
 in the published npm package). Server source is `templates/server/index.js`;
 server permissions are written separately as `server/chunk-permissions.json`.
 The full source layout is in the monorepo's `docs/GENERATORS.md`.
+
+The secure build maps `react`, `react/jsx-runtime`, and `react/jsx-dev-runtime`
+to native ESM templates under `templates/build/`, reusing the React instance of
+the consumer app. After updating the CLI, rebuild the chunks and restart the server.

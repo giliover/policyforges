@@ -14,17 +14,41 @@ export interface SecureBuildOptions {
   serverDir?: string;
 }
 
+// Each secured ESM chunk must use the same React instance as the host CRA app.
+// React's automatic JSX transform emits imports from react/jsx-runtime even
+// when the esbuild JSX factory is configured for the classic transform, because
+// the consumer may have `jsx: react-jsx` in its own tsconfig.json.
+// A virtual adapter for BOTH JSX runtimes avoids embedding another React
+// version's private internals (which breaks with React 18/19 mismatches).
+const runtimeTemplates: Record<string, string> = {
+  react: "react-global.mjs",
+  "react/jsx-runtime": "react-jsx-runtime.mjs",
+  "react/jsx-dev-runtime": "react-jsx-dev-runtime.mjs",
+};
+
 const reactGlobalPlugin: Plugin = {
   name: "react-global",
   setup(build) {
-    build.onResolve({ filter: /^react$/ }, (args) => ({
-      path: args.path,
-      namespace: "react-global",
-    }));
-    build.onLoad({ filter: /.*/, namespace: "react-global" }, () => ({
-      contents: readTemplate("build", "react-global.mjs"),
-      loader: "js",
-    }));
+    build.onResolve(
+      { filter: /^react(?:\/jsx(?:-dev)?-runtime)?$/ },
+      (args) => ({
+        path: args.path,
+        namespace: "react-global",
+      }),
+    );
+    build.onResolve(
+      { filter: /^\.\/react-jsx-runtime\.mjs$/, namespace: "react-global" },
+      () => ({
+        path: "react/jsx-runtime",
+        namespace: "react-global",
+      }),
+    );
+    build.onLoad({ filter: /.*/, namespace: "react-global" }, (args) => {
+      const template = runtimeTemplates[args.path];
+      if (!template)
+        throw new Error(`Unknown React runtime adapter: ${args.path}`);
+      return { contents: readTemplate("build", template), loader: "js" };
+    });
   },
 };
 
@@ -83,7 +107,11 @@ function generateServerFile(ast: ProgramNode, serverDir: string) {
 
   // Server implementation is static; policy data changes on every build.
   const permissionsPath = path.join(serverDir, "chunk-permissions.json");
-  fs.writeFileSync(permissionsPath, serverGenerator.generatePermissions(), "utf-8");
+  fs.writeFileSync(
+    permissionsPath,
+    serverGenerator.generatePermissions(),
+    "utf-8",
+  );
   console.log(`  ✅ Permissões RBAC: ${permissionsPath}`);
 }
 

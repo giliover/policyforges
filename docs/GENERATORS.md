@@ -15,7 +15,10 @@ packages/cli/templates/
 │       ├── Public.tsx
 │       ├── Protected.tsx
 │       └── ExampleScreen.tsx
-├── build/react-global.mjs
+├── build/
+│   ├── react-global.mjs
+│   ├── react-jsx-runtime.mjs
+│   └── react-jsx-dev-runtime.mjs
 └── server/
     ├── index.js
     └── package.json
@@ -33,7 +36,9 @@ packages/cli/templates/
 - `CodeGenerator` takes valid React `.tsx` example lines marked
   `@policyforges:*`, replacing them with imports/routes for each DSL route.
 - `templates/build/react-global.mjs` is editable ESM source read by the esbuild
-  virtual-module plugin.
+  virtual-module plugin. The two `react-jsx-*-runtime.mjs` adapters ensure
+  the automatic JSX transform uses **the host's React instance**, avoiding
+  a bundled, potentially incompatible `react/jsx-runtime` (React 18/19).
 - All CLI templates are shipped in the npm package (`package.json` `files`).
 
 Template markers (such as `@policyforges:public-route`) are intentionally
